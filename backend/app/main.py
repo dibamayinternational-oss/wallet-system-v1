@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.api.v1.endpoints.auth import router as auth_router
 from app.db.session import engine
 
 app = FastAPI(
@@ -10,6 +11,8 @@ app = FastAPI(
     description="REST API for a double-entry wallet and ledger system.",
     version="1.0.0",
 )
+
+app.include_router(auth_router, prefix="/api/v1")
 
 
 @app.get("/health")
@@ -25,9 +28,7 @@ def database_health_check():
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
-
         return {"database": "connected"}
-
     except SQLAlchemyError:
         raise HTTPException(
             status_code=503,
