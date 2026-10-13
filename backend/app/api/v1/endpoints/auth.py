@@ -9,6 +9,11 @@ from app.db.dependencies import get_db
 from app.models.user import User
 from app.schemas.user import UserRegister, UserResponse, UserLogin, TokenResponse
 from app.core.auth import get_current_user
+from decimal import Decimal
+
+from app.models.wallet import Wallet
+from app.core.wallet import generate_wallet_number
+
 # from app.core.security import verify_password, create_access_token
 # from app.schemas.user import UserLogin, TokenResponse
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -41,18 +46,33 @@ def register_user(
         hashed_password=hash_password(user_data.password),
     )
 
+
     try:
         db.add(user)
+        db.flush()  # Get the newly created user's ID.
+
+        wallet = Wallet(
+            user_id=user.id,
+            # wallet_number=f"WAL-{100000 + user.id}",
+            wallet_number=generate_wallet_number(user.id),
+            balance=Decimal("0.00"),
+            status="active",
+        )
+
+        db.add(wallet)
         db.commit()
         db.refresh(user)
+
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An account with this email already exists.",
+            detail="Could not create the account. This email may already exist.",
         )
 
     return user
+    
+    
 
 
 
