@@ -14,6 +14,8 @@ from decimal import Decimal
 from app.models.wallet import Wallet
 from app.core.wallet import generate_wallet_number
 
+from app.models.ledger_account import LedgerAccount
+# from backend.tests.test_ledger import db
 # from app.core.security import verify_password, create_access_token
 # from app.schemas.user import UserLogin, TokenResponse
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -60,6 +62,25 @@ def register_user(
         )
 
         db.add(wallet)
+
+
+
+# Generate wallet.id so the ledger account can reference it.
+        db.flush()
+
+# Automatically create the wallet's ledger account.
+        wallet_ledger = LedgerAccount(
+            account_code=f"WALLET-{wallet.id}",
+            name=f"Wallet liability - {wallet.wallet_number}",
+            account_type="liability",
+            normal_balance="credit",
+            wallet_id=wallet.id,
+            is_system=False,
+        )
+
+        db.add(wallet_ledger)
+
+        # Keep your existing commit below this line.
         db.commit()
         db.refresh(user)
 
