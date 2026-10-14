@@ -7,6 +7,9 @@ from alembic import context
 from app.db.session import Base
 from app.models.user import User
 from app.models.wallet import Wallet
+from app.models.ledger_account import LedgerAccount
+from app.models.ledger_transaction import LedgerTransaction
+from app.models.ledger_entry import LedgerEntry
 from app.core.config import DATABASE_URL
 
 
