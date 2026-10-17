@@ -31,6 +31,10 @@ class Wallet(Base):
             "status IN ('active', 'frozen')",
             name="check_wallet_status",
         ),
+        CheckConstraint(
+            "reserved_balance >= 0 AND reserved_balance <= balance",
+            name="check_wallet_reserved_balance",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -57,6 +61,13 @@ class Wallet(Base):
         server_default="0.00",
     )
 
+    reserved_balance: Mapped[Decimal] = mapped_column(
+        Numeric(18, 2),
+        nullable=False,
+        default=Decimal("0.00"),
+        server_default="0.00",
+    )
+
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
@@ -69,3 +80,7 @@ class Wallet(Base):
         nullable=False,
         server_default=func.now(),
     )
+    
+    @property
+    def available_balance(self) -> Decimal:
+        return self.balance - self.reserved_balance

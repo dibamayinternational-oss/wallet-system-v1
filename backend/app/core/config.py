@@ -1,6 +1,6 @@
 
 import os
-
+from decimal import Decimal
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,3 +18,7 @@ if not JWT_SECRET_KEY:
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
+
+WITHDRAWAL_APPROVAL_LIMIT = Decimal(
+    os.getenv("WITHDRAWAL_APPROVAL_LIMIT", "100000.00")
+)
