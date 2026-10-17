@@ -181,7 +181,7 @@ def deposit_money(
         not idempotency_key
         or idempotency_key.strip() != idempotency_key
         or len(idempotency_key) < 8
-        or len(idempotency_key) > 128
+        or len(idempotency_key) > 100
     ):
         raise ValueError("Invalid Idempotency-Key.")
 

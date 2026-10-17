@@ -19,6 +19,12 @@ SYSTEM_ACCOUNTS = [
         "account_type": "equity",
         "normal_balance": "credit",
     },
+    {
+        "account_code": "SYS-FEE-REVENUE",
+        "name": "System Fee Revenue",
+        "account_type": "revenue",
+        "normal_balance": "credit",
+    },
 ]
 
 

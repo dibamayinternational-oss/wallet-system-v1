@@ -50,7 +50,7 @@ def create_deposit(
         ...,
         alias="Idempotency-Key",
         min_length=8,
-        max_length=128,
+        max_length=100,
     ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
