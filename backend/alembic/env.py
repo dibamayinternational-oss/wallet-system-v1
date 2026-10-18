@@ -12,7 +12,7 @@ from app.models.ledger_transaction import LedgerTransaction
 from app.models.ledger_entry import LedgerEntry
 from app.core.config import DATABASE_URL
 from app.models.withdrawal import WithdrawalRequest
-
+from app.models.transfer import Transfer
 
 
 # this is the Alembic Config object, which provides

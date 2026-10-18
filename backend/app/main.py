@@ -8,6 +8,8 @@ from app.api.v1.endpoints import wallet
 from app.api.v1.endpoints import deposits
 from app.db.session import engine
 from app.api.v1.endpoints import withdrawals
+from app.api.v1.endpoints import transfers
+
 
 app = FastAPI(
     title="Wallet System API",
@@ -19,6 +21,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(wallet.router, prefix="/api/v1",)
 app.include_router(deposits.router, prefix="/api/v1")
 app.include_router(withdrawals.router, prefix="/api/v1")
+app.include_router(transfers.router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():
