@@ -205,7 +205,7 @@ def transfer_money(
             )
 
         if sender.status != "active":
-            raise TransferError("Sender wallet is frozen.")
+            raise TransferError("Sender wallet is   .")
 
         if receiver.status != "active":
             raise TransferError("Receiver wallet is frozen.")

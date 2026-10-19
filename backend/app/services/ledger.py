@@ -21,6 +21,9 @@ def post_transaction(
     entries: list[dict],
     description: str | None = None,
     idempotency_key: str | None = None,
+    reversal_of_transaction_id: int | None = None,
+    reversed_by_user_id: int | None = None,
+    reversal_reason: str | None = None,
 ) -> LedgerTransaction:
     """
     Validate and post a balanced double-entry transaction.
@@ -96,13 +99,25 @@ def post_transaction(
     if found_ids != account_ids:
         raise ValueError("One or more ledger accounts do not exist.")
 
+    # transaction = LedgerTransaction(
+    #     reference=reference,
+    #     transaction_type=transaction_type,
+    #     status="draft",
+    #     description=description,
+    #     idempotency_key=idempotency_key,
+    # )
+
     transaction = LedgerTransaction(
         reference=reference,
         transaction_type=transaction_type,
         status="draft",
         description=description,
         idempotency_key=idempotency_key,
+        reversal_of_transaction_id=reversal_of_transaction_id,
+        reversed_by_user_id=reversed_by_user_id,
+        reversal_reason=reversal_reason,
     )
+    
 
     db.add(transaction)
     db.flush()  # Obtain the transaction ID before inserting its entries.

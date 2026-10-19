@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    ForeignKey,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -63,3 +64,19 @@ class LedgerTransaction(Base):
     posted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    
+    reversal_of_transaction_id: Mapped[int | None] = mapped_column(
+    ForeignKey("ledger_transactions.id"),
+    nullable=True,
+    unique=True,
+)
+
+    reversed_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    reversal_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+)

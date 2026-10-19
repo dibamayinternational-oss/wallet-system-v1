@@ -58,6 +58,7 @@ def setup_wallet(db):
         role="user",
         is_active=True,
     )
+
     admin = User(
         full_name="Withdrawal Test Admin",
         email="withdrawal-admin@example.com",
@@ -65,13 +66,14 @@ def setup_wallet(db):
         role="admin",
         is_active=True,
     )
+
     db.add_all([customer, admin])
     db.flush()
 
     wallet = Wallet(
         user_id=customer.id,
         wallet_number="WALLET-WD-001",
-        balance=Decimal("20000000.00"),
+        balance=Decimal("200000.00"),
         reserved_balance=Decimal("0.00"),
         status="active",
     )
@@ -86,14 +88,16 @@ def setup_wallet(db):
         wallet_id=wallet.id,
         is_system=False,
     )
+
     cash_account = LedgerAccount(
-        account_code="TEST-WD-CASH",
+        account_code="SYS-CASH",
         name="Withdrawal Test System Cash",
         account_type="asset",
         normal_balance="debit",
         wallet_id=None,
         is_system=True,
     )
+
     db.add_all([wallet_account, cash_account])
     db.commit()
 
@@ -138,7 +142,7 @@ def test_small_withdrawal_completes_immediately(db, setup_wallet):
 
     assert withdrawal.status == "completed"
     assert withdrawal.transaction_id is not None
-    assert wallet.balance == Decimal("19000000.00")
+    assert wallet.balance == Decimal("199000.00")
     assert wallet.reserved_balance == Decimal("0.00")
     assert ledger_transaction_count(db) == 1
     assert ledger_entry_count(db) == 2
@@ -156,8 +160,9 @@ def test_large_withdrawal_reserves_funds_without_posting_ledger(
     customer = setup_wallet["customer"]
     wallet = setup_wallet["wallet"]
 
+    # Above the 100,000.00 approval limit, so this stays pending.
     result = create_withdrawal(
-        db, customer, "1500000.00", "wd-large-test-001"
+        db, customer, "150000.00", "wd-large-test-001"
     )
 
     db.refresh(wallet)
@@ -165,9 +170,9 @@ def test_large_withdrawal_reserves_funds_without_posting_ledger(
 
     assert withdrawal.status == "pending"
     assert withdrawal.transaction_id is None
-    assert wallet.balance == Decimal("20000000.00")
-    assert wallet.reserved_balance == Decimal("1500000.00")
-    assert wallet.available_balance == Decimal("500000.00")
+    assert wallet.balance == Decimal("200000.00")
+    assert wallet.reserved_balance == Decimal("150000.00")
+    assert wallet.available_balance == Decimal("50000.00")
     assert ledger_transaction_count(db) == 0
     assert ledger_entry_count(db) == 0
 
@@ -178,19 +183,21 @@ def test_withdrawal_rejects_insufficient_available_balance(
     customer = setup_wallet["customer"]
     wallet = setup_wallet["wallet"]
 
-    # Only 5,000 is available after reserving 15,000.
+    # Reserve 150,000.00, leaving only 50,000.00 available.
     create_withdrawal(
-        db, customer, "15000.00", "wd-reserve-test-001"
+        db, customer, "150000.00", "wd-reserve-test-001"
     )
 
+    # A further 60,000.00 exceeds the available balance.
     with pytest.raises(WithdrawalError):
         create_withdrawal(
-            db, customer, "6000.00", "wd-insufficient-test-001"
+            db, customer, "60000.00", "wd-insufficient-test-001"
         )
 
     db.refresh(wallet)
-    assert wallet.balance == Decimal("20000.00")
-    assert wallet.reserved_balance == Decimal("15000.00")
+    assert wallet.balance == Decimal("200000.00")
+    assert wallet.reserved_balance == Decimal("150000.00")
+    assert wallet.available_balance == Decimal("50000.00")
 
 
 def test_retry_with_same_idempotency_key_does_not_withdraw_twice(
@@ -206,7 +213,7 @@ def test_retry_with_same_idempotency_key_does_not_withdraw_twice(
     db.refresh(wallet)
 
     assert first["id"] == second["id"]
-    assert wallet.balance == Decimal("19000.00")
+    assert wallet.balance == Decimal("199000.00")
     assert ledger_transaction_count(db) == 1
     assert ledger_entry_count(db) == 2
 
@@ -231,13 +238,17 @@ def test_admin_approval_posts_transaction_and_releases_reservation(
     wallet = setup_wallet["wallet"]
 
     result = create_withdrawal(
-        db, customer, "15000.00", "wd-approve-test-001"
+        db, customer, "150000.00", "wd-approve-test-001"
     )
+
+    db.refresh(wallet)
+    assert wallet.balance == Decimal("200000.00")
+    assert wallet.reserved_balance == Decimal("150000.00")
 
     approve_withdrawal(
         db,
         withdrawal_id=result["id"],
-        admin_user_id=admin.id,
+        admin=admin,
     )
 
     db.refresh(wallet)
@@ -247,7 +258,7 @@ def test_admin_approval_posts_transaction_and_releases_reservation(
     assert withdrawal.transaction_id is not None
     assert withdrawal.reviewed_by == admin.id
     assert withdrawal.reviewed_at is not None
-    assert wallet.balance == Decimal("5000.00")
+    assert wallet.balance == Decimal("50000.00")
     assert wallet.reserved_balance == Decimal("0.00")
     assert ledger_transaction_count(db) == 1
     assert ledger_entry_count(db) == 2
@@ -266,13 +277,17 @@ def test_admin_rejection_releases_reservation_without_ledger(
     wallet = setup_wallet["wallet"]
 
     result = create_withdrawal(
-        db, customer, "15000.00", "wd-reject-test-001"
+        db, customer, "150000.00", "wd-reject-test-001"
     )
+
+    db.refresh(wallet)
+    assert wallet.balance == Decimal("200000.00")
+    assert wallet.reserved_balance == Decimal("150000.00")
 
     reject_withdrawal(
         db,
         withdrawal_id=result["id"],
-        admin_user_id=admin.id,
+        admin=admin,
         reason="Automated test rejection",
     )
 
@@ -284,7 +299,7 @@ def test_admin_rejection_releases_reservation_without_ledger(
     assert withdrawal.reviewed_by == admin.id
     assert withdrawal.reviewed_at is not None
     assert withdrawal.rejection_reason == "Automated test rejection"
-    assert wallet.balance == Decimal("20000.00")
+    assert wallet.balance == Decimal("200000.00")
     assert wallet.reserved_balance == Decimal("0.00")
     assert ledger_transaction_count(db) == 0
     assert ledger_entry_count(db) == 0
@@ -297,13 +312,13 @@ def test_rejected_withdrawal_cannot_be_approved_again(
     admin = setup_wallet["admin"]
 
     result = create_withdrawal(
-        db, customer, "15000.00", "wd-terminal-test-001"
+        db, customer, "150000.00", "wd-terminal-test-001"
     )
 
     reject_withdrawal(
         db,
         withdrawal_id=result["id"],
-        admin_user_id=admin.id,
+        admin=admin,
         reason="Reject for terminal-state test",
     )
 
@@ -311,7 +326,8 @@ def test_rejected_withdrawal_cannot_be_approved_again(
         approve_withdrawal(
             db,
             withdrawal_id=result["id"],
-            admin_user_id=admin.id,
+            admin=admin,
         )
 
     assert ledger_transaction_count(db) == 0
+    assert ledger_entry_count(db) == 0
