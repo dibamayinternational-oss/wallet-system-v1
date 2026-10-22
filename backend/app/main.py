@@ -11,6 +11,8 @@ from app.api.v1.endpoints import withdrawals
 from app.api.v1.endpoints import transfers
 from app.api.v1.endpoints import transaction_reversal
 from app.api.v1.endpoints import transaction_history
+from app.api.v1.endpoints import admin
+
 
 app = FastAPI(
     title="Wallet System API",
@@ -25,6 +27,7 @@ app.include_router(withdrawals.router, prefix="/api/v1")
 app.include_router(transfers.router, prefix="/api/v1")
 app.include_router(transaction_reversal.router, prefix="/api/v1")
 app.include_router(transaction_history.router,prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():

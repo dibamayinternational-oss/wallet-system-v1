@@ -11,6 +11,8 @@ from app.models.transfer import Transfer
 from app.models.user import User
 from app.models.wallet import Wallet
 from app.services.ledger import post_transaction
+from app.services.audit_log import record_admin_action
+
 
 
 class ReversalError(Exception):
@@ -186,6 +188,21 @@ def reverse_transfer(
             "reason": reason,
             "reversed_by_user_id": admin_user_id,
         }
+        
+        record_admin_action(
+            db,
+            actor_user_id=admin_user_id,
+            action="transaction_reversed",
+            details={
+                "original_transaction_id": original.id,
+                "original_reference": original.reference,
+                "reversal_transaction_id": reversal.id,
+                "reversal_reference": reversal.reference,
+                "reason": reason,
+            },
+            commit=False,
+        )
+
 
         db.commit()
         return result

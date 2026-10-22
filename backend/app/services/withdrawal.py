@@ -13,6 +13,8 @@ from app.models.user import User
 from app.models.wallet import Wallet
 from app.models.withdrawal import WithdrawalRequest
 from app.services.ledger import post_transaction
+from app.services.audit_log import record_admin_action
+
 
 
 class WithdrawalError(Exception):
@@ -352,10 +354,26 @@ def approve_withdrawal(
 
         request.status = "approved"
         request.transaction_id = transaction.id
+        
         request.reviewed_by = admin.id
         request.reviewed_at = datetime.now(timezone.utc)
 
+        record_admin_action(
+            db,
+            actor_user_id=admin.id,
+            target_user_id=wallet.user_id,
+            wallet_id=wallet.id,
+            action="withdrawal_approved",
+            details={
+                "withdrawal_id": request.id,
+                "withdrawal_reference": request.reference,
+                "amount": str(request.amount),
+            },
+            commit=False,
+        )
+
         db.commit()
+
         db.refresh(request)
         db.refresh(wallet)
 
@@ -409,9 +427,26 @@ def reject_withdrawal(
         request.status = "rejected"
         request.reviewed_by = admin.id
         request.reviewed_at = datetime.now(timezone.utc)
+       
         request.rejection_reason = reason.strip() if reason else None
 
+        record_admin_action(
+            db,
+            actor_user_id=admin.id,
+            target_user_id=wallet.user_id,
+            wallet_id=wallet.id,
+            action="withdrawal_rejected",
+            details={
+                "withdrawal_id": request.id,
+                "withdrawal_reference": request.reference,
+                "amount": str(request.amount),
+                "reason": request.rejection_reason,
+            },
+            commit=False,
+        )
+
         db.commit()
+
         db.refresh(request)
         db.refresh(wallet)
 
