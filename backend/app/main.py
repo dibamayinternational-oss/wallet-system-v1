@@ -12,6 +12,8 @@ from app.api.v1.endpoints import transfers
 from app.api.v1.endpoints import transaction_reversal
 from app.api.v1.endpoints import transaction_history
 from app.api.v1.endpoints import admin
+from app.api.v1.endpoints import reports
+
 
 
 app = FastAPI(
@@ -28,6 +30,7 @@ app.include_router(transfers.router, prefix="/api/v1")
 app.include_router(transaction_reversal.router, prefix="/api/v1")
 app.include_router(transaction_history.router,prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():
