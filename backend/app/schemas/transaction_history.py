@@ -9,6 +9,7 @@ class TransactionHistoryItem(BaseModel):
     reference: str
     transaction_type: str
     status: str
+    is_reversed: bool = False
     created_at: datetime
     amount: Decimal
     debit: Decimal

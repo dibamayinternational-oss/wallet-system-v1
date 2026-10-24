@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -10,7 +10,10 @@ from app.models.ledger_transaction import LedgerTransaction
 from app.models.transfer import Transfer
 from app.models.user import User
 from app.models.wallet import Wallet
-
+from app.services.date_filters import (
+    normalize_datetime_filter,
+    normalize_stored_datetime,
+)
 
 class HistoryError(Exception):
     def __init__(self, detail: str, status_code: int = 400):
@@ -35,8 +38,19 @@ def get_transaction_history(
     if not 1 <= page_size <= 100:
         raise HistoryError("Page size must be between 1 and 100.")
 
-    if start_date and end_date and start_date > end_date:
-        raise HistoryError("Start date must not be after end date.")
+    # if start_date and end_date and start_date > end_date:
+    #     raise HistoryError("Start date must not be after end date.")
+    start_date = normalize_datetime_filter(start_date)
+    end_date = normalize_datetime_filter(
+        end_date,
+        end_of_day=True,
+    )
+
+    if start_date is not None and end_date is not None:
+        if start_date > end_date:
+            raise HistoryError(
+                "Start date must not be after end date."
+            )
 
     wallet = db.scalar(
         select(Wallet).where(Wallet.user_id == user_id)
@@ -70,6 +84,13 @@ def get_transaction_history(
             LedgerEntry.id.asc(),
         )
     ).all()
+    reversed_original_ids = set(
+        db.scalars(
+            select(LedgerTransaction.reversal_of_transaction_id).where(
+                LedgerTransaction.reversal_of_transaction_id.is_not(None)
+            )
+        ).all()
+    )
 
     # Compute the running balance across all account activity before
     # applying the display filters. Credits increase wallet liabilities;
@@ -116,13 +137,17 @@ def get_transaction_history(
             )
             amount = transfer.amount
 
-        effective_date = transaction.posted_at or transaction.created_at
+        # effective_date = transaction.posted_at or transaction.created_at
+        effective_date = normalize_stored_datetime(
+            transaction.posted_at or transaction.created_at
+        )
 
         item = {
             "transaction_id": transaction.id,
             "reference": transaction.reference,
             "transaction_type": transaction.transaction_type,
             "status": transaction.status,
+            "is_reversed": transaction.id in reversed_original_ids,
             "created_at": effective_date,
             "amount": amount,
             "debit": (
@@ -137,6 +162,7 @@ def get_transaction_history(
             "receiver_name": receiver_name,
             "sender_wallet_number": sender_wallet_number,
             "receiver_wallet_number": receiver_wallet_number,
+            
             "reversal_of_transaction_id": (
                 transaction.reversal_of_transaction_id
             ),

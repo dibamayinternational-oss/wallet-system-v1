@@ -206,7 +206,18 @@ def all_transaction_history(
     ).all()
 
     transaction_ids = [tx.id for tx in transactions]
+    reversed_original_ids = set()
 
+    if transaction_ids:
+        reversed_original_ids = set(
+            db.scalars(
+                select(LedgerTransaction.reversal_of_transaction_id).where(
+                    LedgerTransaction.reversal_of_transaction_id.in_(
+                        transaction_ids
+                    )
+                )
+            ).all()
+        )
     # Collect the users and wallets involved in this page's transactions.
     participants_by_transaction: dict[int, dict[int, dict]] = {
         transaction_id: {}
@@ -361,6 +372,7 @@ def all_transaction_history(
                 "reference": tx.reference,
                 "transaction_type": tx.transaction_type,
                 "status": tx.status,
+                "is_reversed": tx.id in reversed_original_ids,
                 "created_at": tx.created_at,
                 "posted_at": tx.posted_at,
                 "description": tx.description,

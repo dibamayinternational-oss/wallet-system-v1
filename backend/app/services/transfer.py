@@ -167,12 +167,20 @@ def transfer_money(
     # row-level locking for concurrency testing.
     wallet_ids = sorted([sender_initial.id, receiver_initial.id])
 
+    # locked_wallets = db.scalars(
+    #     select(Wallet)
+    #     .where(Wallet.id.in_(wallet_ids))
+    #     .order_by(Wallet.id)
+    #     .with_for_update()
+    # ).all()
     locked_wallets = db.scalars(
-        select(Wallet)
-        .where(Wallet.id.in_(wallet_ids))
-        .order_by(Wallet.id)
-        .with_for_update()
+    select(Wallet)
+    .where(Wallet.id.in_(wallet_ids))
+    .order_by(Wallet.id)
+    .with_for_update()
+    .execution_options(populate_existing=True)
     ).all()
+
 
     wallets_by_id = {wallet.id: wallet for wallet in locked_wallets}
     sender = wallets_by_id.get(sender_initial.id)
@@ -205,7 +213,7 @@ def transfer_money(
             )
 
         if sender.status != "active":
-            raise TransferError("Sender wallet is   .")
+            raise TransferError("Sender wallet is frozen.")
 
         if receiver.status != "active":
             raise TransferError("Receiver wallet is frozen.")

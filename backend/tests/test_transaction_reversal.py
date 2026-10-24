@@ -179,10 +179,12 @@ def test_successful_reversal_creates_inverse_balanced_ledger(db, scenario):
         )
     ).all()
 
-    assert original.status == "reversed"
+    # assert original.status == "reversed"
+    assert original.status == "posted"
     assert reversal.transaction_type == "reversal"
     assert reversal.status == "posted"
     assert reversal.reversal_of_transaction_id == original.id
+    assert count_reversals(db, original.id) == 1
     assert reversal.reversed_by_user_id == scenario["admin"].id
     assert reversal.reversal_reason == "Incorrect recipient"
 

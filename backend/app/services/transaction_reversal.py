@@ -51,9 +51,27 @@ def reverse_transfer(
                 "Only user-to-user transfers can be reversed."
             )
 
+        # if original.status != "posted":
+        #     raise ReversalError(
+        #         "Only posted transfers that have not been reversed are eligible."
+        #     )
         if original.status != "posted":
             raise ReversalError(
-                "Only posted transfers that have not been reversed are eligible."
+                "Only posted transfers are eligible for reversal."
+            )
+
+        # The original transaction stays unchanged. Check whether a
+        # separate reversal transaction already references it.
+        existing_reversal = db.scalar(
+            select(LedgerTransaction).where(
+                LedgerTransaction.reversal_of_transaction_id == original.id
+            )
+        )
+
+        if existing_reversal is not None:
+            raise ReversalError(
+                "This transaction has already been reversed.",
+                409,
             )
 
         transfer = db.scalar(
@@ -103,11 +121,18 @@ def reverse_transfer(
             transfer.sender_wallet_id,
             transfer.receiver_wallet_id,
         ])
+        # wallets = db.scalars(
+        #     select(Wallet)
+        #     .where(Wallet.id.in_(wallet_ids))
+        #     .order_by(Wallet.id)
+        #     .with_for_update()
+        # ).all()
         wallets = db.scalars(
             select(Wallet)
             .where(Wallet.id.in_(wallet_ids))
             .order_by(Wallet.id)
             .with_for_update()
+            .execution_options(populate_existing=True)
         ).all()
         by_id = {w.id: w for w in wallets}
         sender = by_id.get(transfer.sender_wallet_id)
@@ -174,9 +199,13 @@ def reverse_transfer(
         sender.balance += transfer.amount + transfer.fee
         receiver.balance -= transfer.amount
 
-        # Mark the original as reversed. Do not edit or delete its entries.
-        original.status = "reversed"
+        # # Mark the original as reversed. Do not edit or delete its entries.
+        # original.status = "reversed"
 
+        # db.flush()
+        
+        # Keep the original transaction unchanged.
+        # The separate reversal record links back to the original.
         db.flush()
 
         result = {
