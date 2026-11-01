@@ -1,0 +1,1 @@
+import{ft as e}from"./format-CXB6vqe0.js";import{n as t}from"./Card-ByxrskLf.js";import{t as n}from"./MoneyForm-WGejOkHG.js";var r=e();function i(){return(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(t,{title:`Deposit`,subtitle:`Add money to your wallet. It shows up instantly and is recorded in the ledger.`}),(0,r.jsx)(n,{kind:`deposit`})]})}export{i as default};

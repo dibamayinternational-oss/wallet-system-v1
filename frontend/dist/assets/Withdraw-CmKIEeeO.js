@@ -1,0 +1,1 @@
+import{ft as e}from"./format-CXB6vqe0.js";import{n as t}from"./Card-ByxrskLf.js";import{t as n}from"./MoneyForm-WGejOkHG.js";var r=e();function i(){return(0,r.jsxs)(r.Fragment,{children:[(0,r.jsx)(t,{title:`Withdraw`,subtitle:`Take money out of your wallet. Regular withdrawals complete immediately.`}),(0,r.jsx)(n,{kind:`withdraw`})]})}export{i as default};

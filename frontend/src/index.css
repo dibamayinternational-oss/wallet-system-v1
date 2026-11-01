@@ -1,0 +1,116 @@
+/*
+ * FILE: src/index.css
+ * PURPOSE: Tailwind v4 setup + the DESIGN TOKENS of the app.
+ *   - the olive/khaki palette you gave (--color-brand-50 ... 950)
+ *   - fonts (self-hosted via @fontsource, no external requests)
+ *   - shadows and every custom keyframe animation
+ * WHERE USED: imported once in src/main.tsx. Tailwind turns each token into utilities,
+ *   e.g. --color-brand-700 => bg-brand-700 / text-brand-700.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/figtree";
+
+@theme {
+  /* ---- MayPay palette: periwinkle blues (brand) on soft cream ----
+     300 = #AAC4F5 and 400 = #8CA9FF are your colours; the rest of the scale is built around them
+     (darker steps are muted navy so text stays readable on cream). */
+  --color-brand-50: #f3f6ff;
+  --color-brand-100: #e6edfd;
+  --color-brand-200: #d0defa;
+  --color-brand-300: #aac4f5;
+  --color-brand-400: #8ca9ff;
+  --color-brand-500: #7590e6;
+  --color-brand-600: #5a73bf;
+  --color-brand-700: #44558f;
+  --color-brand-800: #2d3a66;
+  --color-brand-900: #1d2547;
+  --color-brand-950: #0e1328;
+
+  /* cream: page background and warm highlights (100 = #FFF8DE, 200 = #FFF2C6 are yours) */
+  --color-cream-50: #fffcf0;
+  --color-cream-100: #fff8de;
+  --color-cream-200: #fff2c6;
+  --color-cream-300: #fbe7a1;
+  --color-cream-400: #f4d76f;
+  --color-cream-500: #e3be45;
+
+  /* ---- status colours, tuned to sit with blue + cream ---- */
+  --color-ok: #2f7d5b;
+  --color-ok-soft: #dcf2e7;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fff2c6;
+  --color-bad: #b83a3a;
+  --color-bad-soft: #fbe1de;
+
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 0 rgb(29 37 71 / 0.04), 0 10px 28px -14px rgb(29 37 71 / 0.22);
+  --shadow-lift: 0 2px 0 rgb(29 37 71 / 0.05), 0 22px 44px -18px rgb(29 37 71 / 0.34);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.55);
+
+  --animate-float: float 11s ease-in-out infinite;
+  --animate-float-slow: float 17s ease-in-out infinite reverse;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-shake: shake 0.36s ease-in-out;
+  --animate-pulse-ring: pulse-ring 2.2s ease-out infinite;
+  --animate-travel: travel 1.6s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+  --animate-marquee: marquee 38s linear infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(28px, -36px, 0) scale(1.08); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes travel {
+    0% { left: 0%; opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  @keyframes marquee {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
+}
+
+@layer base {
+  html { color-scheme: light; }
+  body {
+    @apply bg-cream-100 font-sans text-brand-900 antialiased;
+    /* the dotted texture: soft periwinkle dots on cream */
+    background-image: radial-gradient(rgb(110 140 230 / 0.3) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+    overflow-x: clip; /* never let one wide element create a sideways scrollbar */
+  }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+  ::selection { background: var(--color-brand-300); color: var(--color-brand-950); }
+  :focus-visible { outline: 2px solid var(--color-brand-700); outline-offset: 2px; border-radius: 8px; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  /* thin scrollbars that match the theme */
+  * { scrollbar-width: thin; scrollbar-color: var(--color-brand-300) transparent; }
+}
+
+/* Respect users who ask the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
